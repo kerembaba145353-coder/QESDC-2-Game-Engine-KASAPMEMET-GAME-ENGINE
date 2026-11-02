@@ -8,6 +8,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		MessageBox(NULL, "Didnt find image folder and contents please download game or image folder content again", "FATAL ERROR", MB_OK | MB_ICONSTOP);
 		ExitProcess(0);
 	}
+	
 	PlaySound("image\\media\\wav.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);
 	ShowCursor(FALSE);
     SoftwareEngine engine;

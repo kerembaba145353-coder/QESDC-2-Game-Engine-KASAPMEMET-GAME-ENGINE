@@ -72,7 +72,7 @@ void RenderFrame(Camera& cam, World& world) {
     // 1. GÖKYÜZÜ (Üst Kýsým - Mavi)
     int horizon = SCREEN_HEIGHT / 2 + (int)cam.pitch;
     glDisable(GL_TEXTURE_2D);
-    glColor3f(0.3f, 0.6f, 0.9f);
+    glColor3f(0.3f, 0.3f, 0.3f);
     glBegin(GL_QUADS);
         glVertex2i(0, 0);
         glVertex2i(SCREEN_WIDTH, 0);

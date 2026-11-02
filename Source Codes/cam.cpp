@@ -34,8 +34,8 @@ void Camera::AddPitch(double value) {
 }
 
 void Camera::Update(bool forward, bool backward, bool left, bool right, const int worldMap[8][8], double deltaTime) {
-    double moveSpeed = 4.0 * deltaTime; 
-    double rotSpeed = 3.0 * deltaTime;
+    double moveSpeed = 2.0 * deltaTime; 
+    double rotSpeed = 2.0 * deltaTime;
 
     if (forward) {
         if (worldMap[(int)posY][(int)(posX + dirX * moveSpeed)] == 0) posX += dirX * moveSpeed;

@@ -35,8 +35,8 @@ bool KM_Core::Initialize(HINSTANCE hInstance) {
         dmScreenSettings.dmSize = sizeof(dmScreenSettings);
         
         // 640x480 çözünürlüðünü ve 32-bit renk derinliðini doðrudan talep et
-        dmScreenSettings.dmPelsWidth  = 640;
-        dmScreenSettings.dmPelsHeight = 480;
+        dmScreenSettings.dmPelsWidth  = GetSystemMetrics(SM_CXSCREEN);
+        dmScreenSettings.dmPelsHeight = GetSystemMetrics(SM_CYSCREEN);
         dmScreenSettings.dmBitsPerPel = 32;
         dmScreenSettings.dmFields     = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
 
