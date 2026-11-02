@@ -18,7 +18,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
             int id = LOWORD(wParam);
             
             if(id == 2){
-            	ShellExecute(hwnd, "runas", "Backrooms.exe", NULL, NULL, SW_SHOW);
+            	ShellExecute(hwnd, "open", "Backrooms.exe", NULL, NULL, SW_SHOW);
             	ExitProcess(0);
 			}
 			else if(id == 1){
