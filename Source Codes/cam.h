@@ -9,7 +9,7 @@ public:
     double pitch; // Yukarý / Aþaðý bakma açýsý (Dikey kaydýrma)
 
     Camera();
-    void Update(bool forward, bool backward, bool left, bool right, const int worldMap[512][512], double deltaTime);
+    void Update(bool forward, bool backward, bool left, bool right, const int worldMap[8][8], double deltaTime);
     void Rotate(double rotSpeed);
     void AddPitch(double value);
 };

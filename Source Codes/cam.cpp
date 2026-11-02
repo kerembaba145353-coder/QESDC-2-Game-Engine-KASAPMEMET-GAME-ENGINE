@@ -33,7 +33,7 @@ void Camera::AddPitch(double value) {
     if (pitch < -200.0) pitch = -200.0;
 }
 
-void Camera::Update(bool forward, bool backward, bool left, bool right, const int worldMap[512][512], double deltaTime) {
+void Camera::Update(bool forward, bool backward, bool left, bool right, const int worldMap[8][8], double deltaTime) {
     double moveSpeed = 4.0 * deltaTime; 
     double rotSpeed = 3.0 * deltaTime;
 
