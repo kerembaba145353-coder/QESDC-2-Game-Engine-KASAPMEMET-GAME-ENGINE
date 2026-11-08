@@ -4,6 +4,7 @@
 #include <windows.h>
 #include "cam.h"
 #include "world.h"
+#include "enemy.h"
 
 const int SCREEN_WIDTH = GetSystemMetrics(SM_CXSCREEN);
 const int SCREEN_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
@@ -18,6 +19,7 @@ public:
     
     Camera cam;
     World world;
+    Enemy enemy1;
 
     KM_Core();
     ~KM_Core();

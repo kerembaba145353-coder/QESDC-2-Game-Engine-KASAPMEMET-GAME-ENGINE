@@ -1,6 +1,7 @@
 #include "core.h"
 #include "opengl.h"
 #include "render.h"
+#include <cmath>
 
 KM_Core* KM_Core::instance = NULL;
 
@@ -10,6 +11,13 @@ KM_Core::KM_Core() {
     hwnd = NULL;
     hDC = NULL;
     hRC = NULL;
+    enemy1.x = 5.5;
+enemy1.y = 5.5;
+enemy1.health = 100;
+enemy1.alive = 1;
+enemy1.texture = 0;
+enemy1.moveTimer = 0.0;
+    
 }
 
 KM_Core::~KM_Core() {
@@ -104,6 +112,31 @@ void KM_Core::Update(double deltaTime) {
     bool right = GetAsyncKeyState('D') & 0x8000;
 
     cam.Update(fwd, bwd, left, right, world.map, deltaTime);
+    
+    if (enemy1.alive) {
+    double dx = cam.posX - enemy1.x;
+    double dy = cam.posY - enemy1.y;
+
+    double distance = std::sqrt(dx * dx + dy * dy);
+
+    if (distance > 1.0) {
+        double speed = 1.0 * deltaTime;
+
+        double nx = enemy1.x + (dx / distance) * speed;
+        double ny = enemy1.y + (dy / distance) * speed;
+
+        int mapX = (int)nx;
+        int mapY = (int)ny;
+
+        if (mapX >= 0 && mapX < World::MAP_W &&
+            mapY >= 0 && mapY < World::MAP_H &&
+            world.map[mapY][mapX] == 0) {
+
+            enemy1.x = nx;
+            enemy1.y = ny;
+        }
+    }
+}
 }
 
 void KM_Core::Render() {

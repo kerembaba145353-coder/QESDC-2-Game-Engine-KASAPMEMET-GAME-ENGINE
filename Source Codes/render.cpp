@@ -4,13 +4,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <GL/gl.h>
+#include <vector>
 
 // BMP Yükleme Fonksiyonu
+
 static GLuint LoadBMP(const char* filename) {
     FILE *file = fopen(filename, "rb");
     if (!file) return 0;
 
     unsigned char header[54];
+
     if (fread(header, 1, 54, file) != 54) {
         fclose(file);
         return 0;
@@ -21,49 +24,103 @@ static GLuint LoadBMP(const char* filename) {
         return 0;
     }
 
-    unsigned int dataPos   = *(int*)&(header[0x0A]);
-    unsigned int imageSize = *(int*)&(header[0x22]);
-    unsigned int width     = *(int*)&(header[0x12]);
-    unsigned int height    = *(int*)&(header[0x16]);
+    unsigned int dataPos = *(unsigned int*)&header[10];
+    unsigned int width = *(unsigned int*)&header[18];
+    unsigned int height = *(unsigned int*)&header[22];
+    unsigned short bits = *(unsigned short*)&header[28];
+    unsigned int compression = *(unsigned int*)&header[30];
 
-    if (imageSize == 0) imageSize = width * height * 3;
-    if (dataPos == 0) dataPos = 54;
+    if (bits != 24 || compression != 0 ||
+        width == 0 || height == 0) {
+        fclose(file);
+        return 0;
+    }
 
-    unsigned char *data = new unsigned char[imageSize];
-    fread(data, 1, imageSize, file);
+    unsigned int rowSize = (width * 3 + 3) & ~3;
+    unsigned int imageSize = rowSize * height;
+
+    unsigned char *src = new unsigned char[imageSize];
+
+    if (fseek(file, dataPos, SEEK_SET) != 0 ||
+        fread(src, 1, imageSize, file) != imageSize) {
+        delete[] src;
+        fclose(file);
+        return 0;
+    }
+
     fclose(file);
 
-    for (unsigned int i = 0; i < imageSize; i += 3) {
-        unsigned char temp = data[i];
-        data[i] = data[i + 2];
-        data[i + 2] = temp;
+    unsigned char *rgba =
+        new unsigned char[width * height * 4];
+
+    for (unsigned int y = 0; y < height; y++) {
+        for (unsigned int x = 0; x < width; x++) {
+            unsigned int srcPos = y * rowSize + x * 3;
+            unsigned int dstPos = (y * width + x) * 4;
+
+            unsigned char b = src[srcPos];
+            unsigned char g = src[srcPos + 1];
+            unsigned char r = src[srcPos + 2];
+
+            rgba[dstPos] = r;
+            rgba[dstPos + 1] = g;
+            rgba[dstPos + 2] = b;
+
+            // Magenta transparency
+            if (r == 255 && g == 0 && b == 255)
+                rgba[dstPos + 3] = 0;
+            else
+                rgba[dstPos + 3] = 255;
+        }
     }
+
+    delete[] src;
 
     GLuint textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    
-    // GL_CLAMP_TO_EDGE yerine OpenGL 1.1 uyumlu GL_CLAMP kullanýyoruz:
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D,
+        GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTexParameteri(GL_TEXTURE_2D,
+        GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    delete[] data;
+    glTexParameteri(GL_TEXTURE_2D,
+        GL_TEXTURE_WRAP_S, GL_CLAMP);
+
+    glTexParameteri(GL_TEXTURE_2D,
+        GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGBA,
+        width,
+        height,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        rgba
+    );
+
+    delete[] rgba;
+
     return textureID;
 }
 
+static std::vector<double> zBuffer;
+
 static GLuint wallTexture = 0;
 static GLuint gunTexture = 0;
+static GLuint enemyTexture = 0;
 static bool texturesLoaded = false;
 
 void RenderFrame(Camera& cam, World& world) {
     if (!texturesLoaded) {
         wallTexture = LoadBMP("image\\Textures\\wall.bmp");
         gunTexture = LoadBMP("image\\Textures\\gun.bmp");
+        enemyTexture = LoadBMP("image\\Textures\\enemy1.bmp");
         texturesLoaded = true;
     }
 
@@ -72,7 +129,7 @@ void RenderFrame(Camera& cam, World& world) {
     // 1. GÖKYÜZÜ (Üst Kýsým - Mavi)
     int horizon = SCREEN_HEIGHT / 2 + (int)cam.pitch;
     glDisable(GL_TEXTURE_2D);
-    glColor3f(0.3f, 0.3f, 0.3f);
+    glColor3f(0.2f, 0.2f, 0.3f);
     glBegin(GL_QUADS);
         glVertex2i(0, 0);
         glVertex2i(SCREEN_WIDTH, 0);
@@ -81,7 +138,7 @@ void RenderFrame(Camera& cam, World& world) {
     glEnd();
 
     // 2. ZEMÝN (Alt Kýsým - Gri/Toprak)
-    glColor3f(0.25f, 0.25f, 0.25f);
+    glColor3f(0.0f, 0.25f, 0.0f);
     glBegin(GL_QUADS);
         glVertex2i(0, horizon < SCREEN_HEIGHT ? horizon : SCREEN_HEIGHT);
         glVertex2i(SCREEN_WIDTH, horizon < SCREEN_HEIGHT ? horizon : SCREEN_HEIGHT);
@@ -174,22 +231,41 @@ void RenderFrame(Camera& cam, World& world) {
     }
 
     // 4. EKRANIN ALTINA SÝLAH (HUD) ÇÝZÝMÝ
-    if (gunTexture != 0) {
-        glBindTexture(GL_TEXTURE_2D, gunTexture);
-        glColor3f(1.0f, 1.0f, 1.0f);
+    // 4. WEAPON HUD
+    glEnable(GL_BLEND);
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+if (gunTexture != 0) {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, gunTexture);
 
-        int gunW = 64; // Silahýn ekrandaki geniþliði
-        int gunH = 64; // Silahýn ekrandaki yüksekliði
-        int gunX = (SCREEN_WIDTH - gunW); // Ekranýn ortasý (biraz saða kayýk)
-        int gunY = SCREEN_HEIGHT - gunH;         // Ekranýn alt kýsmý
+    glColor3f(1.0f, 1.0f, 1.0f);
 
-        glBegin(GL_QUADS);
-            glTexCoord2f(0.0f, 0.0f); glVertex2i(gunX, gunY);
-            glTexCoord2f(0.0f, 1.0f); glVertex2i(gunX, gunY + gunH);
-            glTexCoord2f(1.0f, 1.0f); glVertex2i(gunX + gunW, gunY + gunH);
-            glTexCoord2f(1.0f, 1.0f); glVertex2i(gunX + gunW, gunY);
-        glEnd();
-    }
+    // Silah boyutlarý
+    int gunW = 512;
+    int gunH = 512;
+
+    // Ekranýn tam ortasý
+    int gunX = (SCREEN_WIDTH - gunW) / 2;
+
+    // Ekranýn alt kýsmý
+    int gunY = SCREEN_HEIGHT - gunH;
+
+    glBegin(GL_QUADS);
+
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2i(gunX, gunY);
+
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2i(gunX, gunY + gunH);
+
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2i(gunX + gunW, gunY + gunH);
+
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2i(gunX + gunW, gunY);
+
+    glEnd();
+}
 
     glDisable(GL_TEXTURE_2D);
 }
