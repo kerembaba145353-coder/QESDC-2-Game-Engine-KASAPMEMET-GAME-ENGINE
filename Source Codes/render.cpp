@@ -114,12 +114,14 @@ static std::vector<double> zBuffer;
 static GLuint wallTexture = 0;
 static GLuint gunTexture = 0;
 static GLuint enemyTexture = 0;
+static GLuint gunTexture2 = 0;
 static bool texturesLoaded = false;
 
 void RenderFrame(Camera& cam, World& world) {
     if (!texturesLoaded) {
         wallTexture = LoadBMP("image\\Textures\\wall.bmp");
         gunTexture = LoadBMP("image\\Textures\\gun.bmp");
+        gunTexture2 = LoadBMP("image\\Textures\\cursor.bmp");
         enemyTexture = LoadBMP("image\\Textures\\enemy1.bmp");
         texturesLoaded = true;
     }
@@ -234,7 +236,7 @@ void RenderFrame(Camera& cam, World& world) {
     // 4. WEAPON HUD
     glEnable(GL_BLEND);
 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-if (gunTexture != 0) {
+if (gunTexture2 != 0) {
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, gunTexture);
 
@@ -267,5 +269,29 @@ if (gunTexture != 0) {
     glEnd();
 }
 
-    glDisable(GL_TEXTURE_2D);
+// 4. EKRANIN ALTINA SÝLAH VE ÝMLEÇ ÇÝZÝMÝ
+glEnable(GL_BLEND);
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+// Ýkinci texture (gun.bmp / gunTexture)
+if (gunTexture2 != 0) {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, gunTexture2);
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+    int gunW2 = 64;
+    int gunH2 = 64;
+    int gunX2 = (SCREEN_WIDTH - gunW2) / 2;
+    int gunY2 = (SCREEN_HEIGHT - gunH2) / 2; 
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f); glVertex2i(gunX2, gunY2);
+        glTexCoord2f(0.0f, 1.0f); glVertex2i(gunX2, gunY2 + gunH2);
+        glTexCoord2f(1.0f, 1.0f); glVertex2i(gunX2 + gunW2, gunY2 + gunH2);
+        glTexCoord2f(1.0f, 0.0f); glVertex2i(gunX2 + gunW2, gunY2);
+    glEnd();
+}
+
+glDisable(GL_TEXTURE_2D);
 }

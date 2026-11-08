@@ -3,7 +3,6 @@
 #include "Software.h"
 #include "core.h"
 #include <cstring>
-#include "intro.h"
 
 bool intro = true;
 
